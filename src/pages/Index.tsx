@@ -1,11 +1,102 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
+import { mockPosts, navSections } from "@/data/mockData";
+import { PostCard } from "@/components/PostCard";
+import { SidebarModules } from "@/components/SidebarModules";
 
 const Index = () => {
+  const featuredPost = mockPosts.find((p) => p.isPinned) || mockPosts[0];
+  const secondaryFeatured = mockPosts.filter((p) => p.id !== featuredPost.id).slice(0, 2);
+  const latestPosts = mockPosts.filter(
+    (p) => p.id !== featuredPost.id && !secondaryFeatured.find((s) => s.id === p.id)
+  );
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div>
+      {/* Hero section */}
+      <section className="bg-card border-b border-border">
+        <div className="container py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main featured */}
+            <div className="lg:col-span-2">
+              <PostCard post={featuredPost} variant="hero" />
+            </div>
+            {/* Secondary featured */}
+            <div className="flex flex-col gap-4">
+              {secondaryFeatured.map((post) => (
+                <PostCard key={post.id} post={post} variant="horizontal" />
+              ))}
+              {/* Breaking summary card */}
+              <div className="bg-alert/5 border border-alert/20 rounded-sm p-4 flex-1">
+                <h3 className="section-label text-alert mb-2">Live Updates</h3>
+                <ul className="space-y-2">
+                  {mockPosts.slice(0, 3).map((post) => (
+                    <li key={post.id}>
+                      <Link
+                        to={`/${post.section}/${post.category}/${post.id}`}
+                        className="text-sm hover:text-alert transition-colors line-clamp-2"
+                      >
+                        {post.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Main content + sidebar */}
+      <div className="container py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
+          {/* Main column */}
+          <main>
+            {/* Latest stream */}
+            <div className="mb-10">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-display font-bold text-xl">Latest</h2>
+                <Link to="/latest" className="text-sm font-semibold text-alert hover:underline flex items-center gap-1">
+                  View all <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                {latestPosts.slice(0, 6).map((post) => (
+                  <PostCard key={post.id} post={post} />
+                ))}
+              </div>
+            </div>
+
+            {/* Section blocks */}
+            {navSections.slice(0, 4).map((section) => {
+              const sectionPosts = mockPosts.filter((p) => p.section === section.slug);
+              if (sectionPosts.length === 0) return null;
+              return (
+                <div key={section.slug} className="mb-10">
+                  <div className="flex items-center justify-between mb-4 border-b-2 border-foreground pb-2">
+                    <h2 className="font-display font-bold text-lg">{section.title}</h2>
+                    <Link
+                      to={`/${section.slug}`}
+                      className="text-sm font-semibold text-alert hover:underline flex items-center gap-1"
+                    >
+                      More <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    {sectionPosts.slice(0, 4).map((post) => (
+                      <PostCard key={post.id} post={post} variant="horizontal" />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </main>
+
+          {/* Sidebar */}
+          <div className="hidden lg:block">
+            <SidebarModules />
+          </div>
+        </div>
       </div>
     </div>
   );
