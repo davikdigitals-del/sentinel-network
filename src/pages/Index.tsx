@@ -13,20 +13,37 @@ const Index = () => {
 
   return (
     <div>
-      {/* Hero section */}
+      {/* Hero Banner */}
+      <section className="relative w-full h-[280px] md:h-[380px] overflow-hidden">
+        <img
+          src="/images/hero-banner.jpg"
+          alt="Be Prepared, Be Ready — Preparedness Hub"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/30 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
+          <div className="container">
+            <h1 className="font-display font-bold text-3xl md:text-5xl text-card leading-tight">
+              Be Prepared. Be Ready.
+            </h1>
+            <p className="text-card/80 text-sm md:text-lg mt-2 max-w-xl">
+              Your trusted source for survival knowledge, emergency preparedness, and civil resilience across NATO nations.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured posts */}
       <section className="bg-card border-b border-border">
         <div className="container py-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Main featured */}
             <div className="lg:col-span-2">
               <PostCard post={featuredPost} variant="hero" />
             </div>
-            {/* Secondary featured */}
             <div className="flex flex-col gap-4">
               {secondaryFeatured.map((post) => (
                 <PostCard key={post.id} post={post} variant="horizontal" />
               ))}
-              {/* Breaking summary card */}
               <div className="bg-alert/5 border border-alert/20 rounded-sm p-4 flex-1">
                 <h3 className="section-label text-alert mb-2">Live Updates</h3>
                 <ul className="space-y-2">
@@ -50,9 +67,7 @@ const Index = () => {
       {/* Main content + sidebar */}
       <div className="container py-8">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
-          {/* Main column */}
           <main>
-            {/* Latest stream */}
             <div className="mb-10">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-display font-bold text-xl">Latest</h2>
@@ -67,7 +82,6 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Section blocks */}
             {navSections.slice(0, 4).map((section) => {
               const sectionPosts = mockPosts.filter((p) => p.section === section.slug);
               if (sectionPosts.length === 0) return null;
@@ -92,7 +106,6 @@ const Index = () => {
             })}
           </main>
 
-          {/* Sidebar */}
           <div className="hidden lg:block">
             <SidebarModules />
           </div>

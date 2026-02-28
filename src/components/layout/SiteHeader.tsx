@@ -1,15 +1,18 @@
 import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Search, Menu, X, ChevronDown, Globe, Bell } from "lucide-react";
+import { Search, Menu, X, ChevronDown, Globe, User } from "lucide-react";
 import { navSections, emergencyAlerts } from "@/data/mockData";
 import { MegaMenu } from "./MegaMenu";
 import { MobileDrawer } from "./MobileDrawer";
 import { AlertTicker } from "./AlertTicker";
+import { NotificationDropdown } from "./NotificationDropdown";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function SiteHeader() {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const { user } = useAuth();
 
   const handleMenuEnter = useCallback((slug: string) => {
     setActiveMenu(slug);
@@ -21,13 +24,11 @@ export function SiteHeader() {
 
   return (
     <>
-      {/* Emergency alert ticker */}
       <AlertTicker alerts={emergencyAlerts} />
 
-      {/* Main header */}
       <header className="sticky top-0 z-50 bg-header text-header-foreground">
         <div className="container flex items-center justify-between h-14">
-          {/* Left: Logo + hamburger */}
+          {/* Left */}
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileOpen(true)}
@@ -46,7 +47,7 @@ export function SiteHeader() {
             </Link>
           </div>
 
-          {/* Center: Nav links (desktop) */}
+          {/* Center nav */}
           <nav className="hidden lg:flex items-center h-full">
             {navSections.slice(0, 6).map((section) => (
               <div
@@ -67,15 +68,42 @@ export function SiteHeader() {
                 )}
               </div>
             ))}
-            <div className="relative h-full flex items-center group">
+            {/* More dropdown */}
+            <div
+              className="relative h-full flex items-center"
+              onMouseEnter={() => handleMenuEnter("_more")}
+              onMouseLeave={handleMenuLeave}
+            >
               <button className="flex items-center gap-1 px-3 h-full text-sm font-medium hover:bg-primary/20 transition-colors">
                 More
                 <ChevronDown className="w-3 h-3 opacity-50" />
               </button>
+              {activeMenu === "_more" && (
+                <div className="absolute top-full right-0 w-52 bg-card border border-border shadow-xl z-50 rounded-sm animate-slide-down">
+                  <div className="py-2">
+                    {[
+                      { title: "Library", to: "/library" },
+                      { title: "Encyclopaedia", to: "/encyclopaedia" },
+                      { title: "Podcasts & Videos", to: "/media" },
+                      { title: "Countries & Flags", to: "/countries" },
+                      { title: "About", to: "/about" },
+                    ].map(link => (
+                      <Link
+                        key={link.to}
+                        to={link.to}
+                        className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                        onClick={handleMenuLeave}
+                      >
+                        {link.title}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </nav>
 
-          {/* Right: Actions */}
+          {/* Right */}
           <div className="flex items-center gap-1">
             <button
               onClick={() => setSearchOpen(!searchOpen)}
@@ -91,16 +119,23 @@ export function SiteHeader() {
             >
               <Globe className="w-4 h-4" />
             </Link>
-            <button className="p-2 hover:bg-primary/20 rounded transition-colors relative" aria-label="Notifications">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-alert rounded-full" />
-            </button>
-            <Link
-              to="/login"
-              className="hidden sm:inline-flex ml-2 px-3 py-1.5 text-xs font-semibold bg-alert text-alert-foreground rounded-sm hover:opacity-90 transition-opacity"
-            >
-              Sign In
-            </Link>
+            <NotificationDropdown />
+            {user ? (
+              <Link
+                to="/dashboard"
+                className="hidden sm:inline-flex ml-2 px-3 py-1.5 text-xs font-semibold bg-alert text-alert-foreground rounded-sm hover:opacity-90 transition-opacity items-center gap-1"
+              >
+                <User className="w-3 h-3" />
+                {user.name}
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="hidden sm:inline-flex ml-2 px-3 py-1.5 text-xs font-semibold bg-alert text-alert-foreground rounded-sm hover:opacity-90 transition-opacity"
+              >
+                Sign In
+              </Link>
+            )}
           </div>
         </div>
 
@@ -125,7 +160,6 @@ export function SiteHeader() {
         )}
       </header>
 
-      {/* Mobile drawer */}
       <MobileDrawer open={mobileOpen} onClose={() => setMobileOpen(false)} />
     </>
   );
