@@ -20,6 +20,7 @@ interface AuthContextType {
   logout: () => void;
   notifications: Notification[];
   markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: () => void;
   unreadCount: number;
 }
 
@@ -110,11 +111,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   };
 
+  const markAllNotificationsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
+
   const unreadCount = notifications.filter(n => !n.read).length;
   const isAdmin = user?.role === "admin";
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, login, adminLogin, signup, logout, notifications, markNotificationRead, unreadCount }}>
+    <AuthContext.Provider value={{ user, isAdmin, login, adminLogin, signup, logout, notifications, markNotificationRead, markAllNotificationsRead, unreadCount }}>
       {children}
     </AuthContext.Provider>
   );

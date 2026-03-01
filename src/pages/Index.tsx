@@ -13,24 +13,13 @@ const Index = () => {
 
   return (
     <div>
-      {/* Hero Banner */}
+      {/* Hero Banner — clean, no overlay text (Doc #13) */}
       <section className="relative w-full h-[280px] md:h-[380px] overflow-hidden">
         <img
           src="/images/hero-banner.jpg"
-          alt="Be Prepared, Be Ready — Preparedness Hub"
+          alt="Preparedness Hub"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/30 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
-          <div className="container">
-            <h1 className="font-display font-bold text-3xl md:text-5xl text-card leading-tight">
-              Be Prepared. Be Ready.
-            </h1>
-            <p className="text-card/80 text-sm md:text-lg mt-2 max-w-xl">
-              Your trusted source for survival knowledge, emergency preparedness, and civil resilience across NATO nations.
-            </p>
-          </div>
-        </div>
       </section>
 
       {/* Featured posts */}
