@@ -27,6 +27,9 @@ import AdminAlerts from "./pages/admin/AdminAlerts";
 import AdminMedia from "./pages/admin/AdminMedia";
 import AdminPodcastVideos from "./pages/admin/AdminPodcastVideos";
 import AdminPages from "./pages/admin/AdminPages";
+import AdminLibrary from "./pages/admin/AdminLibrary";
+import AdminEncyclopaedia from "./pages/admin/AdminEncyclopaedia";
+import AdminBanner from "./pages/admin/AdminBanner";
 
 const queryClient = new QueryClient();
 
@@ -47,8 +50,11 @@ const App = () => (
               <Route path="posts" element={<AdminPosts />} />
               <Route path="categories" element={<AdminCategories />} />
               <Route path="alerts" element={<AdminAlerts />} />
+              <Route path="banner" element={<AdminBanner />} />
               <Route path="media" element={<AdminMedia />} />
               <Route path="podcast-videos" element={<AdminPodcastVideos />} />
+              <Route path="library" element={<AdminLibrary />} />
+              <Route path="encyclopaedia" element={<AdminEncyclopaedia />} />
               <Route path="pages" element={<AdminPages />} />
             </Route>
 

@@ -13,6 +13,9 @@ import {
   Video,
   FileStack,
   LogOut,
+  BookOpen,
+  Library,
+  Megaphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -23,8 +26,11 @@ const adminNav = [
   { label: "Posts", path: "/admin/posts", icon: FileText },
   { label: "Categories", path: "/admin/categories", icon: FolderTree },
   { label: "Emergency Alerts", path: "/admin/alerts", icon: AlertTriangle },
+  { label: "Announcer Banner", path: "/admin/banner", icon: Megaphone },
   { label: "Media & Uploads", path: "/admin/media", icon: Upload },
   { label: "Podcasts & Videos", path: "/admin/podcast-videos", icon: Video },
+  { label: "Library", path: "/admin/library", icon: Library },
+  { label: "Encyclopaedia", path: "/admin/encyclopaedia", icon: BookOpen },
   { label: "Pages", path: "/admin/pages", icon: FileStack },
 ];
 
@@ -33,7 +39,6 @@ export default function AdminLayout() {
   const location = useLocation();
   const { user, isAdmin, logout } = useAuth();
 
-  // Redirect to admin-login if not admin
   if (!user || !isAdmin) {
     return <Navigate to="/admin-login" replace />;
   }

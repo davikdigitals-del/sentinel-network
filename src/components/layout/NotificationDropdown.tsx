@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Bell, Check } from "lucide-react";
+import { Bell, Check, CheckCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatTimeAgo } from "@/data/mockData";
+import { Button } from "@/components/ui/button";
 
 export function NotificationDropdown() {
-  const { notifications, markNotificationRead, unreadCount } = useAuth();
+  const { notifications, markNotificationRead, markAllNotificationsRead, unreadCount } = useAuth();
   const [open, setOpen] = useState(false);
 
   return (
@@ -27,10 +28,22 @@ export function NotificationDropdown() {
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full mt-2 w-80 bg-card border border-border rounded-sm shadow-xl z-50 animate-slide-down">
             <div className="flex items-center justify-between p-3 border-b border-border">
-              <h3 className="font-display font-bold text-sm">Notifications</h3>
-              {unreadCount > 0 && (
-                <span className="text-xs text-alert font-semibold">{unreadCount} new</span>
-              )}
+              <h3 className="font-display font-bold text-sm text-foreground">Notifications</h3>
+              <div className="flex items-center gap-2">
+                {unreadCount > 0 && (
+                  <>
+                    <span className="text-xs text-alert font-semibold">{unreadCount} new</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-xs px-2"
+                      onClick={() => markAllNotificationsRead()}
+                    >
+                      <CheckCheck className="w-3 h-3 mr-1" /> Mark all read
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
             <div className="max-h-80 overflow-y-auto divide-y divide-border">
               {notifications.length === 0 && (
