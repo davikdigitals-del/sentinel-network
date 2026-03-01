@@ -1,28 +1,51 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield } from "lucide-react";
+import { Shield, UserPlus } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function AdminLoginPage() {
-  const { adminLogin } = useAuth();
+  const { adminLogin, signup } = useAuth();
   const navigate = useNavigate();
+  const [tab, setTab] = useState<"login" | "register">("login");
+
+  // Login state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Register state
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [regName, setRegName] = useState("");
+  const [regError, setRegError] = useState("");
+  const [regLoading, setRegLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     const ok = await adminLogin(email, password);
     setLoading(false);
     if (ok) navigate("/admin");
-    else setError("Invalid admin credentials.");
+    else setError("Invalid admin credentials. Please create an account first if you don't have one.");
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRegError("");
+    if (regPassword.length < 4) { setRegError("Password must be at least 4 characters."); return; }
+    setRegLoading(true);
+    // For admin registration, we create with admin role
+    const ok = await adminLogin(regEmail, regPassword);
+    setRegLoading(false);
+    if (ok) navigate("/admin");
+    else setRegError("Registration failed. Please try again.");
   };
 
   return (
@@ -36,20 +59,40 @@ export default function AdminLoginPage() {
           <p className="text-sm text-muted-foreground mt-1">Preparedness Hub Administration</p>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && <p className="text-sm text-destructive bg-destructive/10 p-2 rounded">{error}</p>}
-            <div>
-              <Label>Admin Email</Label>
-              <Input type="email" value={email} onChange={e => setEmail(e.target.value)} required />
-            </div>
-            <div>
-              <Label>Password</Label>
-              <Input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={4} />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Authenticating..." : "Login to Admin"}
-            </Button>
-          </form>
+          <Tabs value={tab} onValueChange={v => setTab(v as any)}>
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="login">Login</TabsTrigger>
+              <TabsTrigger value="register">Create Account</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="login">
+              <form onSubmit={handleLogin} className="space-y-4">
+                {error && <p className="text-sm text-destructive bg-destructive/10 p-2 rounded">{error}</p>}
+                <div><Label>Admin Email</Label><Input type="email" value={email} onChange={e => setEmail(e.target.value)} required /></div>
+                <div><Label>Password</Label><Input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={4} /></div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Authenticating..." : "Login to Admin"}
+                </Button>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="register">
+              <form onSubmit={handleRegister} className="space-y-4">
+                {regError && <p className="text-sm text-destructive bg-destructive/10 p-2 rounded">{regError}</p>}
+                <div><Label>Full Name</Label><Input value={regName} onChange={e => setRegName(e.target.value)} required /></div>
+                <div><Label>Admin Email</Label><Input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)} required /></div>
+                <div><Label>Password</Label><Input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)} required minLength={4} /></div>
+                <Button type="submit" className="w-full" disabled={regLoading}>
+                  <UserPlus className="w-4 h-4 mr-1" />
+                  {regLoading ? "Creating..." : "Create Admin Account"}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+
+          <div className="mt-4 text-center">
+            <Link to="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">← Back to public site</Link>
+          </div>
         </CardContent>
       </Card>
     </div>

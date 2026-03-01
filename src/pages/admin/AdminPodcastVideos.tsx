@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Edit2, Trash2, Video, Headphones } from "lucide-react";
+import { Plus, Edit2, Trash2, Video, Headphones, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,46 +8,39 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { type MediaItem, mockMediaItems } from "@/pages/MediaHubPage";
+import { useData, type MediaItem } from "@/contexts/DataContext";
 
 export default function AdminPodcastVideos() {
-  const [items, setItems] = useState<MediaItem[]>([...mockMediaItems]);
+  const { mediaItems, setMediaItems } = useData();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<MediaItem | null>(null);
   const [search, setSearch] = useState("");
   const [form, setForm] = useState<Partial<MediaItem>>({
-    title: "", description: "", type: "video", duration: "", author: "", tags: [],
+    title: "", description: "", type: "video", duration: "", author: "", tags: [], url: "",
   });
 
-  const filtered = items.filter(i => i.title.toLowerCase().includes(search.toLowerCase()));
+  const filtered = mediaItems.filter(i => i.title.toLowerCase().includes(search.toLowerCase()));
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ title: "", description: "", type: "video", duration: "", author: "", tags: [] });
+    setForm({ title: "", description: "", type: "video", duration: "", author: "", tags: [], url: "" });
     setDialogOpen(true);
   };
 
-  const openEdit = (item: MediaItem) => {
-    setEditing(item);
-    setForm({ ...item });
-    setDialogOpen(true);
-  };
+  const openEdit = (item: MediaItem) => { setEditing(item); setForm({ ...item }); setDialogOpen(true); };
 
   const handleSave = () => {
     if (editing) {
-      setItems(prev => prev.map(i => i.id === editing.id ? { ...editing, ...form } as MediaItem : i));
+      setMediaItems(prev => prev.map(i => i.id === editing.id ? { ...editing, ...form } as MediaItem : i));
     } else {
-      setItems(prev => [{
-        ...form,
-        id: Date.now().toString(),
-        views: 0,
-        publishedAt: new Date().toISOString().split("T")[0],
+      setMediaItems(prev => [{
+        ...form, id: Date.now().toString(), views: 0, publishedAt: new Date().toISOString().split("T")[0],
       } as MediaItem, ...prev]);
     }
     setDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => setItems(prev => prev.filter(i => i.id !== id));
+  const handleDelete = (id: string) => setMediaItems(prev => prev.filter(i => i.id !== id));
 
   return (
     <div className="space-y-6">
@@ -70,6 +63,7 @@ export default function AdminPodcastVideos() {
                 <div className="flex items-center gap-2 mb-0.5">
                   <Badge variant="secondary" className="text-[10px]">{item.type}</Badge>
                   <span className="text-xs text-muted-foreground">{item.duration}</span>
+                  {item.url && <LinkIcon className="w-3 h-3 text-info" />}
                 </div>
                 <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
                 <p className="text-xs text-muted-foreground">{item.author} · {item.views.toLocaleString()} views</p>
@@ -85,18 +79,10 @@ export default function AdminPodcastVideos() {
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editing ? "Edit Media" : "Add Media"}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>{editing ? "Edit Media" : "Add Media"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label>Title</Label>
-              <Input value={form.title || ""} onChange={e => setForm({ ...form, title: e.target.value })} />
-            </div>
-            <div>
-              <Label>Description</Label>
-              <Textarea value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} />
-            </div>
+            <div><Label>Title</Label><Input value={form.title || ""} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
+            <div><Label>Description</Label><Textarea value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} /></div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Type</Label>
@@ -108,22 +94,11 @@ export default function AdminPodcastVideos() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>Duration</Label>
-                <Input value={form.duration || ""} onChange={e => setForm({ ...form, duration: e.target.value })} placeholder="24:15" />
-              </div>
+              <div><Label>Duration</Label><Input value={form.duration || ""} onChange={e => setForm({ ...form, duration: e.target.value })} placeholder="24:15" /></div>
             </div>
-            <div>
-              <Label>Author</Label>
-              <Input value={form.author || ""} onChange={e => setForm({ ...form, author: e.target.value })} />
-            </div>
-            <div>
-              <Label>Tags (comma-separated)</Label>
-              <Input
-                value={form.tags?.join(", ") || ""}
-                onChange={e => setForm({ ...form, tags: e.target.value.split(",").map(t => t.trim()).filter(Boolean) })}
-              />
-            </div>
+            <div><Label>Author</Label><Input value={form.author || ""} onChange={e => setForm({ ...form, author: e.target.value })} /></div>
+            <div><Label>Media URL (video/podcast/external link)</Label><Input value={form.url || ""} onChange={e => setForm({ ...form, url: e.target.value })} placeholder="https://youtube.com/... or upload URL" /></div>
+            <div><Label>Tags (comma-separated)</Label><Input value={form.tags?.join(", ") || ""} onChange={e => setForm({ ...form, tags: e.target.value.split(",").map(t => t.trim()).filter(Boolean) })} /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>

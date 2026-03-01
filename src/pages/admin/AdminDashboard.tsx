@@ -1,16 +1,19 @@
-import { FileText, AlertTriangle, FolderTree, Eye, TrendingUp, Upload } from "lucide-react";
+import { FileText, AlertTriangle, FolderTree, Eye, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockPosts, emergencyAlerts, navSections } from "@/data/mockData";
-
-const stats = [
-  { label: "Total Posts", value: mockPosts.length, icon: FileText, color: "text-primary" },
-  { label: "Active Alerts", value: emergencyAlerts.length, icon: AlertTriangle, color: "text-destructive" },
-  { label: "Categories", value: navSections.reduce((a, s) => a + s.categories.length, 0), icon: FolderTree, color: "text-info" },
-  { label: "Total Views", value: mockPosts.reduce((a, p) => a + p.viewCount, 0).toLocaleString(), icon: Eye, color: "text-success" },
-];
+import { navSections } from "@/data/mockData";
+import { useData } from "@/contexts/DataContext";
 
 export default function AdminDashboard() {
-  const recentPosts = [...mockPosts].sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()).slice(0, 5);
+  const { posts, alerts, publishedPosts } = useData();
+
+  const stats = [
+    { label: "Total Posts", value: posts.length, icon: FileText, color: "text-primary" },
+    { label: "Active Alerts", value: alerts.length, icon: AlertTriangle, color: "text-destructive" },
+    { label: "Categories", value: navSections.reduce((a, s) => a + s.categories.length, 0), icon: FolderTree, color: "text-info" },
+    { label: "Total Views", value: posts.reduce((a, p) => a + p.viewCount, 0).toLocaleString(), icon: Eye, color: "text-success" },
+  ];
+
+  const recentPosts = [...posts].sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()).slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -44,7 +47,7 @@ export default function AdminDashboard() {
               <div key={post.id} className="flex items-start gap-3 pb-3 border-b border-border last:border-0 last:pb-0">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground line-clamp-2">{post.title}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{post.section} · {post.viewCount.toLocaleString()} views</p>
+                  <p className="text-xs text-muted-foreground mt-1">{post.section} · {post.viewCount.toLocaleString()} views · {post.status}</p>
                 </div>
                 <span className="text-xs text-muted-foreground shrink-0">{post.readTime}</span>
               </div>
@@ -59,7 +62,7 @@ export default function AdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {emergencyAlerts.map((alert) => (
+            {alerts.map((alert) => (
               <div key={alert.id} className="flex items-start gap-3 pb-3 border-b border-border last:border-0 last:pb-0">
                 <span className={`mt-1 w-2 h-2 rounded-full shrink-0 ${
                   alert.priority === "high" ? "bg-destructive" : alert.priority === "medium" ? "bg-warning" : "bg-info"
@@ -70,6 +73,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
             ))}
+            {alerts.length === 0 && <p className="text-sm text-muted-foreground">No active alerts.</p>}
           </CardContent>
         </Card>
       </div>

@@ -1,26 +1,18 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { BookOpen, Download, Search, Filter, ChevronRight } from "lucide-react";
+import { BookOpen, Download, Search, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
-const libraryItems = [
-  { id: "lib1", title: "Complete Emergency Planning Guide", author: "Dr. Sarah Mitchell", category: "Emergency Planning", pages: 124, format: "PDF", description: "Comprehensive guide covering all aspects of emergency planning for families and communities.", tags: ["planning", "family", "emergency"], coverColor: "bg-primary" },
-  { id: "lib2", title: "Water Purification Methods & Storage", author: "James Crawford", category: "Water Safety", pages: 68, format: "PDF", description: "Everything you need to know about water purification, storage, and rationing during emergencies.", tags: ["water", "purification", "survival"], coverColor: "bg-info" },
-  { id: "lib3", title: "First Aid Field Manual", author: "Dr. Mark Thompson", category: "First Aid", pages: 156, format: "PDF", description: "Military-grade first aid techniques adapted for civilian emergency use.", tags: ["first-aid", "medical", "field"], coverColor: "bg-alert" },
-  { id: "lib4", title: "Urban Survival Handbook", author: "Captain David Hughes", category: "Urban Survival", pages: 210, format: "PDF", description: "Survival strategies specifically designed for urban environments during crisis situations.", tags: ["urban", "survival", "city"], coverColor: "bg-success" },
-  { id: "lib5", title: "Emergency Communication Systems", author: "Tom Barrett", category: "Communication", pages: 92, format: "PDF", description: "Guide to alternative communication methods when digital infrastructure fails.", tags: ["radio", "communication", "mesh"], coverColor: "bg-warning" },
-  { id: "lib6", title: "Food Storage & Rationing Guide", author: "Lisa Chen", category: "Food & Rations", pages: 88, format: "PDF", description: "How to build, maintain, and rotate food supplies for long-term survival.", tags: ["food", "storage", "rations"], coverColor: "bg-category-directives" },
-  { id: "lib7", title: "Mental Health in Crisis Situations", author: "Dr. Rachel Green", category: "Mental Health", pages: 145, format: "PDF", description: "Psychological resilience strategies for maintaining mental health during emergencies.", tags: ["mental-health", "resilience", "psychology"], coverColor: "bg-category-health" },
-  { id: "lib8", title: "NATO Civil Preparedness Standards", author: "Helena Voss", category: "Official Documents", pages: 78, format: "PDF", description: "Simplified guide to NATO's civilian preparedness requirements and standards.", tags: ["NATO", "standards", "official"], coverColor: "bg-category-directives" },
-];
-
-const categories = [...new Set(libraryItems.map(i => i.category))];
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useData } from "@/contexts/DataContext";
 
 export default function LibraryPage() {
+  const { libraryItems } = useData();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [previewItem, setPreviewItem] = useState<typeof libraryItems[0] | null>(null);
+
+  const categories = [...new Set(libraryItems.map(i => i.category))];
 
   const filtered = libraryItems.filter(item => {
     const matchSearch = item.title.toLowerCase().includes(search.toLowerCase()) || item.author.toLowerCase().includes(search.toLowerCase());
@@ -28,9 +20,27 @@ export default function LibraryPage() {
     return matchSearch && matchCat;
   });
 
+  const handleRead = (item: typeof libraryItems[0]) => {
+    if (item.fileUrl) {
+      window.open(item.fileUrl, "_blank");
+    } else {
+      setPreviewItem(item);
+    }
+  };
+
+  const handleDownload = (item: typeof libraryItems[0]) => {
+    if (item.fileUrl) {
+      const a = document.createElement("a");
+      a.href = item.fileUrl;
+      a.download = `${item.title}.${item.format.toLowerCase()}`;
+      a.click();
+    } else {
+      setPreviewItem(item);
+    }
+  };
+
   return (
     <div className="container py-8">
-      {/* Header - Library feel */}
       <div className="bg-primary text-primary-foreground rounded-sm p-6 md:p-10 mb-8">
         <div className="flex items-center gap-3 mb-3">
           <BookOpen className="w-8 h-8" />
@@ -41,7 +51,6 @@ export default function LibraryPage() {
         </p>
       </div>
 
-      {/* Search & filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -49,7 +58,6 @@ export default function LibraryPage() {
         </div>
       </div>
 
-      {/* Category pills */}
       <div className="flex flex-wrap gap-2 mb-8">
         <button
           onClick={() => setSelectedCategory(null)}
@@ -68,11 +76,9 @@ export default function LibraryPage() {
         ))}
       </div>
 
-      {/* Book grid - library style */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filtered.map(item => (
           <div key={item.id} className="group">
-            {/* Book cover */}
             <div className={`${item.coverColor} rounded-sm aspect-[3/4] p-5 flex flex-col justify-between text-primary-foreground relative overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow`}>
               <div className="absolute inset-0 bg-gradient-to-b from-transparent to-foreground/20" />
               <div className="relative z-10">
@@ -84,15 +90,14 @@ export default function LibraryPage() {
                 <p className="text-xs opacity-60">{item.pages} pages</p>
               </div>
             </div>
-            {/* Info below */}
             <div className="mt-3 space-y-2">
               <p className="text-xs text-muted-foreground uppercase tracking-wide">{item.category}</p>
               <p className="text-sm text-muted-foreground line-clamp-2">{item.description}</p>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="flex-1 text-xs">
-                  <BookOpen className="w-3 h-3 mr-1" /> Read
+                <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => handleRead(item)}>
+                  <Eye className="w-3 h-3 mr-1" /> Read
                 </Button>
-                <Button size="sm" className="flex-1 text-xs">
+                <Button size="sm" className="flex-1 text-xs" onClick={() => handleDownload(item)}>
                   <Download className="w-3 h-3 mr-1" /> Download
                 </Button>
               </div>
@@ -104,6 +109,33 @@ export default function LibraryPage() {
       {filtered.length === 0 && (
         <p className="text-center text-muted-foreground py-16">No items found in the library.</p>
       )}
+
+      {/* Preview dialog for items without fileUrl */}
+      <Dialog open={!!previewItem} onOpenChange={() => setPreviewItem(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display">{previewItem?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <span>By {previewItem?.author}</span>
+              <span>·</span>
+              <span>{previewItem?.pages} pages</span>
+              <span>·</span>
+              <Badge variant="secondary" className="text-[10px]">{previewItem?.format}</Badge>
+            </div>
+            <p className="text-sm">{previewItem?.description}</p>
+            <div className="bg-muted rounded-sm p-8 text-center">
+              <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">
+                {previewItem?.fileUrl
+                  ? "Document preview available"
+                  : "No file uploaded yet. Admin can add a document URL in the admin dashboard."}
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
