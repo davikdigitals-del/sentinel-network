@@ -11,20 +11,7 @@ export interface User {
   joinedAt: string;
 }
 
-interface AuthContextType {
-  user: User | null;
-  isAdmin: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  adminLogin: (email: string, password: string) => Promise<boolean>;
-  signup: (data: { email: string; password: string; name: string; country: string }) => Promise<boolean>;
-  logout: () => void;
-  notifications: Notification[];
-  markNotificationRead: (id: string) => void;
-  markAllNotificationsRead: () => void;
-  unreadCount: number;
-}
-
-export interface Notification {
+export interface AppNotification {
   id: string;
   title: string;
   message: string;
@@ -33,9 +20,22 @@ export interface Notification {
   type: "post" | "alert" | "system";
 }
 
+interface AuthContextType {
+  user: User | null;
+  isAdmin: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
+  adminLogin: (email: string, password: string) => Promise<boolean>;
+  signup: (data: { email: string; password: string; name: string; country: string }) => Promise<boolean>;
+  logout: () => void;
+  notifications: AppNotification[];
+  markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: () => void;
+  unreadCount: number;
+}
+
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const MOCK_NOTIFICATIONS: Notification[] = [
+const MOCK_NOTIFICATIONS: AppNotification[] = [
   { id: "n1", title: "New Post Published", message: "UK Government Issues Updated Emergency Preparedness Guidelines", timestamp: new Date().toISOString(), read: false, type: "post" },
   { id: "n2", title: "Emergency Alert", message: "Power disruptions reported across Northern Europe", timestamp: new Date(Date.now() - 3600000).toISOString(), read: false, type: "alert" },
   { id: "n3", title: "New Guide Available", message: "How to Build a 14-Day Emergency Water Supply", timestamp: new Date(Date.now() - 7200000).toISOString(), read: false, type: "post" },
@@ -43,7 +43,7 @@ const MOCK_NOTIFICATIONS: Notification[] = [
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("ph_user");
