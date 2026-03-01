@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Edit2, Trash2, BookOpen, Download, Eye } from "lucide-react";
+import { Plus, Edit2, Trash2, BookOpen, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,51 +8,35 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-interface LibraryItem {
-  id: string;
-  title: string;
-  author: string;
-  category: string;
-  pages: number;
-  format: string;
-  description: string;
-  fileUrl: string;
-}
-
-const initialItems: LibraryItem[] = [
-  { id: "lib1", title: "Complete Emergency Planning Guide", author: "Dr. Sarah Mitchell", category: "Emergency Planning", pages: 124, format: "PDF", description: "Comprehensive guide covering all aspects of emergency planning.", fileUrl: "" },
-  { id: "lib2", title: "Water Purification Methods & Storage", author: "James Crawford", category: "Water Safety", pages: 68, format: "PDF", description: "Everything about water purification and storage.", fileUrl: "" },
-  { id: "lib3", title: "First Aid Field Manual", author: "Dr. Mark Thompson", category: "First Aid", pages: 156, format: "PDF", description: "Military-grade first aid techniques for civilian use.", fileUrl: "" },
-  { id: "lib4", title: "Urban Survival Handbook", author: "Captain David Hughes", category: "Urban Survival", pages: 210, format: "PDF", description: "Survival strategies for urban environments.", fileUrl: "" },
-];
+import { useData, type LibraryItem } from "@/contexts/DataContext";
 
 const categories = ["Emergency Planning", "Water Safety", "First Aid", "Urban Survival", "Communication", "Food & Rations", "Mental Health", "Official Documents"];
+const coverColors = ["bg-primary", "bg-info", "bg-alert", "bg-success", "bg-warning", "bg-category-directives", "bg-category-health"];
 
-const emptyItem: Omit<LibraryItem, "id"> = { title: "", author: "", category: "", pages: 0, format: "PDF", description: "", fileUrl: "" };
+const emptyItem: Omit<LibraryItem, "id"> = { title: "", author: "", category: "", pages: 0, format: "PDF", description: "", fileUrl: "", coverColor: "bg-primary" };
 
 export default function AdminLibrary() {
-  const [items, setItems] = useState<LibraryItem[]>(initialItems);
+  const { libraryItems, setLibraryItems } = useData();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<LibraryItem | null>(null);
   const [form, setForm] = useState(emptyItem);
   const [search, setSearch] = useState("");
 
-  const filtered = items.filter(i => i.title.toLowerCase().includes(search.toLowerCase()));
+  const filtered = libraryItems.filter(i => i.title.toLowerCase().includes(search.toLowerCase()));
 
   const openCreate = () => { setEditing(null); setForm(emptyItem); setDialogOpen(true); };
   const openEdit = (item: LibraryItem) => { setEditing(item); setForm(item); setDialogOpen(true); };
 
   const handleSave = () => {
     if (editing) {
-      setItems(prev => prev.map(i => i.id === editing.id ? { ...form, id: editing.id } : i));
+      setLibraryItems(prev => prev.map(i => i.id === editing.id ? { ...form, id: editing.id } : i));
     } else {
-      setItems(prev => [{ ...form, id: Date.now().toString() }, ...prev]);
+      setLibraryItems(prev => [{ ...form, id: Date.now().toString() }, ...prev]);
     }
     setDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => setItems(prev => prev.filter(i => i.id !== id));
+  const handleDelete = (id: string) => setLibraryItems(prev => prev.filter(i => i.id !== id));
 
   return (
     <div className="space-y-6">
@@ -61,16 +45,14 @@ export default function AdminLibrary() {
         <Button onClick={openCreate}><Plus className="w-4 h-4 mr-1" /> Add Document</Button>
       </div>
 
-      <div className="relative max-w-md">
-        <Input placeholder="Search documents..." value={search} onChange={e => setSearch(e.target.value)} className="pl-3" />
-      </div>
+      <Input placeholder="Search documents..." value={search} onChange={e => setSearch(e.target.value)} />
 
       <Card>
         <CardContent className="p-0 divide-y divide-border">
           {filtered.length === 0 && <p className="p-8 text-center text-muted-foreground">No documents found.</p>}
           {filtered.map(item => (
             <div key={item.id} className="flex items-center gap-4 p-4 hover:bg-muted/30 transition-colors">
-              <div className="w-10 h-12 bg-primary rounded-sm flex items-center justify-center shrink-0">
+              <div className={`w-10 h-12 ${item.coverColor} rounded-sm flex items-center justify-center shrink-0`}>
                 <BookOpen className="w-5 h-5 text-primary-foreground" />
               </div>
               <div className="flex-1 min-w-0">
@@ -115,7 +97,20 @@ export default function AdminLibrary() {
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>File URL</Label><Input value={form.fileUrl} onChange={e => setForm({ ...form, fileUrl: e.target.value })} placeholder="Upload or paste URL" /></div>
+              <div>
+                <Label>Cover Color</Label>
+                <Select value={form.coverColor} onValueChange={v => setForm({ ...form, coverColor: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{coverColors.map(c => <SelectItem key={c} value={c}>{c.replace("bg-", "")}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label>File URL (PDF or document link)</Label>
+              <div className="flex gap-2 mt-1">
+                <Input value={form.fileUrl} onChange={e => setForm({ ...form, fileUrl: e.target.value })} placeholder="https://... or upload" className="flex-1" />
+                <Button variant="outline" size="icon"><Upload className="w-4 h-4" /></Button>
+              </div>
             </div>
             <div><Label>Description</Label><Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} /></div>
           </div>

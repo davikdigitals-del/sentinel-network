@@ -1,12 +1,19 @@
 import { Link } from "react-router-dom";
-import { mockPosts, navSections, formatTimeAgo } from "@/data/mockData";
 import { Eye, Clock, ArrowRight, Download, BookOpen, Radio } from "lucide-react";
+import { navSections } from "@/data/mockData";
+import { useData } from "@/contexts/DataContext";
 
 export function SidebarModules() {
-  const mostRead = [...mockPosts].sort((a, b) => b.viewCount - a.viewCount).slice(0, 5);
-  const latestAlerts = mockPosts
+  const { publishedPosts, alerts } = useData();
+
+  const mostRead = [...publishedPosts].sort((a, b) => b.viewCount - a.viewCount).slice(0, 5);
+  const latestAlerts = publishedPosts
     .filter((p) => p.section === "emergency-news")
     .slice(0, 4);
+
+  const topDirectives = publishedPosts
+    .filter((p) => p.section === "directives")
+    .slice(0, 3);
 
   return (
     <aside className="space-y-6">
@@ -47,19 +54,13 @@ export function SidebarModules() {
       <div className="sidebar-module border-l-2 border-alert">
         <h3 className="section-label text-alert mb-3">Latest Alerts</h3>
         <div className="space-y-3">
-          {latestAlerts.map((post) => (
-            <Link
-              key={post.id}
-              to={`/${post.section}/${post.category}/${post.id}`}
-              className="block group"
-            >
-              <h4 className="text-sm font-semibold leading-snug line-clamp-2 group-hover:text-alert transition-colors">
-                {post.title}
+          {alerts.map((alert) => (
+            <div key={alert.id} className="block">
+              <h4 className="text-sm font-semibold leading-snug line-clamp-2">
+                {alert.text}
               </h4>
-              <span className="text-xs text-muted-foreground mt-0.5 block">
-                {formatTimeAgo(post.publishedAt)}
-              </span>
-            </Link>
+              <span className="text-xs text-muted-foreground mt-0.5 block capitalize">{alert.priority} priority</span>
+            </div>
           ))}
         </div>
       </div>
@@ -69,9 +70,9 @@ export function SidebarModules() {
         <h3 className="section-label text-muted-foreground mb-3">Quick Access</h3>
         <div className="space-y-2">
           {[
-            { icon: Download, label: "Download Checklists", to: "/resources/checklists" },
+            { icon: Download, label: "Download Checklists", to: "/resources" },
             { icon: BookOpen, label: "Survival Encyclopaedia", to: "/encyclopaedia" },
-            { icon: Radio, label: "Emergency Frequencies", to: "/tools/frequencies" },
+            { icon: Radio, label: "Library", to: "/library" },
           ].map(({ icon: Icon, label, to }) => (
             <Link
               key={to}
@@ -80,7 +81,7 @@ export function SidebarModules() {
             >
               <Icon className="w-4 h-4 text-muted-foreground" />
               {label}
-              <ArrowRight className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ArrowRight className="w-3 h-3 ml-auto" />
             </Link>
           ))}
         </div>
@@ -89,21 +90,18 @@ export function SidebarModules() {
       {/* Top Directives */}
       <div className="sidebar-module">
         <h3 className="section-label text-muted-foreground mb-3">Top Directives</h3>
-        {mockPosts
-          .filter((p) => p.section === "directives")
-          .slice(0, 3)
-          .map((post) => (
-            <Link
-              key={post.id}
-              to={`/${post.section}/${post.category}/${post.id}`}
-              className="block group mb-3 last:mb-0"
-            >
-              <h4 className="text-sm font-semibold leading-snug line-clamp-2 group-hover:text-alert transition-colors">
-                {post.title}
-              </h4>
-              <span className="text-xs text-muted-foreground">{post.author}</span>
-            </Link>
-          ))}
+        {topDirectives.map((post) => (
+          <Link
+            key={post.id}
+            to={`/${post.section}/${post.category}/${post.id}`}
+            className="block group mb-3 last:mb-0"
+          >
+            <h4 className="text-sm font-semibold leading-snug line-clamp-2 group-hover:text-alert transition-colors">
+              {post.title}
+            </h4>
+            <span className="text-xs text-muted-foreground">{post.author}</span>
+          </Link>
+        ))}
       </div>
     </aside>
   );

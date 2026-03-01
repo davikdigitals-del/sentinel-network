@@ -1,39 +1,23 @@
 import { useState } from "react";
-import { Plus, Edit2, Trash2, BookOpen } from "lucide-react";
+import { Plus, Edit2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-
-interface EncEntry {
-  id: string;
-  title: string;
-  letter: string;
-  content: string;
-}
-
-const initialEntries: EncEntry[] = [
-  { id: "e1", title: "Bug-Out Bag", letter: "B", content: "A portable kit containing essential items for survival..." },
-  { id: "e2", title: "CPR Techniques", letter: "C", content: "Cardiopulmonary resuscitation methods for emergency first aid..." },
-  { id: "e3", title: "Evacuation Planning", letter: "E", content: "Steps and strategies for planning safe evacuation routes..." },
-  { id: "e4", title: "First Aid Kits", letter: "F", content: "Essential supplies and how to maintain a comprehensive first aid kit..." },
-  { id: "e5", title: "Ham Radio", letter: "H", content: "Amateur radio communication systems for emergency situations..." },
-  { id: "e6", title: "Water Purification", letter: "W", content: "Methods to purify water in emergency and survival situations..." },
-];
+import { useData, type EncEntry } from "@/contexts/DataContext";
 
 const emptyEntry: Omit<EncEntry, "id"> = { title: "", letter: "", content: "" };
 
 export default function AdminEncyclopaedia() {
-  const [entries, setEntries] = useState<EncEntry[]>(initialEntries);
+  const { encEntries, setEncEntries } = useData();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<EncEntry | null>(null);
   const [form, setForm] = useState(emptyEntry);
   const [search, setSearch] = useState("");
 
-  const filtered = entries.filter(e => e.title.toLowerCase().includes(search.toLowerCase()));
+  const filtered = encEntries.filter(e => e.title.toLowerCase().includes(search.toLowerCase()));
   const sorted = [...filtered].sort((a, b) => a.title.localeCompare(b.title));
 
   const openCreate = () => { setEditing(null); setForm(emptyEntry); setDialogOpen(true); };
@@ -42,14 +26,14 @@ export default function AdminEncyclopaedia() {
   const handleSave = () => {
     const letter = form.title.charAt(0).toUpperCase();
     if (editing) {
-      setEntries(prev => prev.map(e => e.id === editing.id ? { ...form, id: editing.id, letter } : e));
+      setEncEntries(prev => prev.map(e => e.id === editing.id ? { ...form, id: editing.id, letter } : e));
     } else {
-      setEntries(prev => [{ ...form, id: Date.now().toString(), letter }, ...prev]);
+      setEncEntries(prev => [{ ...form, id: Date.now().toString(), letter }, ...prev]);
     }
     setDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => setEntries(prev => prev.filter(e => e.id !== id));
+  const handleDelete = (id: string) => setEncEntries(prev => prev.filter(e => e.id !== id));
 
   return (
     <div className="space-y-6">
@@ -58,9 +42,7 @@ export default function AdminEncyclopaedia() {
         <Button onClick={openCreate}><Plus className="w-4 h-4 mr-1" /> Add Entry</Button>
       </div>
 
-      <div className="relative max-w-md">
-        <Input placeholder="Search entries..." value={search} onChange={e => setSearch(e.target.value)} />
-      </div>
+      <Input placeholder="Search entries..." value={search} onChange={e => setSearch(e.target.value)} />
 
       <Card>
         <CardContent className="p-0 divide-y divide-border">
@@ -88,7 +70,7 @@ export default function AdminEncyclopaedia() {
           <DialogHeader><DialogTitle>{editing ? "Edit Entry" : "Add Entry"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div><Label>Title</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="e.g. Water Purification" /></div>
-            <div><Label>Content</Label><Textarea value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} rows={6} placeholder="Full article content..." /></div>
+            <div><Label>Content</Label><Textarea value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} rows={6} /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>

@@ -1,10 +1,9 @@
 import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Search, Menu, X, ChevronDown, Globe, User } from "lucide-react";
-import { navSections, emergencyAlerts } from "@/data/mockData";
+import { navSections } from "@/data/mockData";
 import { MegaMenu } from "./MegaMenu";
 import { MobileDrawer } from "./MobileDrawer";
-import { AlertTicker } from "./AlertTicker";
 import { NotificationDropdown } from "./NotificationDropdown";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -24,8 +23,6 @@ export function SiteHeader() {
 
   return (
     <>
-      <AlertTicker alerts={emergencyAlerts} />
-
       <header className="sticky top-0 z-50 bg-header text-header-foreground">
         <div className="container flex items-center justify-between h-14">
           {/* Left */}
@@ -81,6 +78,16 @@ export function SiteHeader() {
               {activeMenu === "_more" && (
                 <div className="absolute top-full right-0 w-52 bg-card border border-border shadow-xl z-50 rounded-sm animate-slide-down">
                   <div className="py-2">
+                    {navSections.slice(6).map(s => (
+                      <Link
+                        key={s.slug}
+                        to={`/${s.slug}`}
+                        className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                        onClick={handleMenuLeave}
+                      >
+                        {s.title}
+                      </Link>
+                    ))}
                     {[
                       { title: "Library", to: "/library" },
                       { title: "Encyclopaedia", to: "/encyclopaedia" },

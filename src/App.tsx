@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { DataProvider } from "@/contexts/DataContext";
 import Index from "./pages/Index";
 import SectionPage from "./pages/SectionPage";
 import ArticlePage from "./pages/ArticlePage";
@@ -36,51 +37,48 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Admin login - standalone */}
-            <Route path="/admin-login" element={<AdminLoginPage />} />
-
-            {/* Admin routes */}
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="posts" element={<AdminPosts />} />
-              <Route path="categories" element={<AdminCategories />} />
-              <Route path="alerts" element={<AdminAlerts />} />
-              <Route path="banner" element={<AdminBanner />} />
-              <Route path="media" element={<AdminMedia />} />
-              <Route path="podcast-videos" element={<AdminPodcastVideos />} />
-              <Route path="library" element={<AdminLibrary />} />
-              <Route path="encyclopaedia" element={<AdminEncyclopaedia />} />
-              <Route path="pages" element={<AdminPages />} />
-            </Route>
-
-            {/* Public routes */}
-            <Route element={<PublicLayout />}>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<SignInPage />} />
-              <Route path="/signup" element={<SignUpPage />} />
-              <Route path="/dashboard" element={<MemberDashboard />} />
-              <Route path="/countries" element={<CountriesPage />} />
-              <Route path="/library" element={<LibraryPage />} />
-              <Route path="/encyclopaedia" element={<EncyclopaediaPage />} />
-              <Route path="/media" element={<MediaHubPage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/legal/:page" element={<LegalPage />} />
-              <Route path="/privacy" element={<LegalPage />} />
-              <Route path="/terms" element={<LegalPage />} />
-              <Route path="/disclaimer" element={<LegalPage />} />
-              <Route path="/:section" element={<SectionPage />} />
-              <Route path="/:section/:category" element={<SectionPage />} />
-              <Route path="/:section/:category/:id" element={<ArticlePage />} />
-              <Route path="*" element={<NotFound />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <DataProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/admin-login" element={<AdminLoginPage />} />
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="posts" element={<AdminPosts />} />
+                <Route path="categories" element={<AdminCategories />} />
+                <Route path="alerts" element={<AdminAlerts />} />
+                <Route path="banner" element={<AdminBanner />} />
+                <Route path="media" element={<AdminMedia />} />
+                <Route path="podcast-videos" element={<AdminPodcastVideos />} />
+                <Route path="library" element={<AdminLibrary />} />
+                <Route path="encyclopaedia" element={<AdminEncyclopaedia />} />
+                <Route path="pages" element={<AdminPages />} />
+              </Route>
+              <Route element={<PublicLayout />}>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<SignInPage />} />
+                <Route path="/signup" element={<SignUpPage />} />
+                <Route path="/dashboard" element={<MemberDashboard />} />
+                <Route path="/countries" element={<CountriesPage />} />
+                <Route path="/library" element={<LibraryPage />} />
+                <Route path="/encyclopaedia" element={<EncyclopaediaPage />} />
+                <Route path="/media" element={<MediaHubPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/legal/:page" element={<LegalPage />} />
+                <Route path="/privacy" element={<LegalPage />} />
+                <Route path="/terms" element={<LegalPage />} />
+                <Route path="/disclaimer" element={<LegalPage />} />
+                <Route path="/:section" element={<SectionPage />} />
+                <Route path="/:section/:category" element={<SectionPage />} />
+                <Route path="/:section/:category/:id" element={<ArticlePage />} />
+                <Route path="*" element={<NotFound />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </DataProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import { navSections } from "@/data/mockData";
+import { useData } from "@/contexts/DataContext";
 import type { NavSection } from "@/data/mockData";
 
 interface MegaMenuProps {
@@ -7,9 +9,13 @@ interface MegaMenuProps {
 }
 
 export function MegaMenu({ section, onClose }: MegaMenuProps) {
+  const { publishedPosts } = useData();
+  const pinnedPost = publishedPosts.find(p => p.section === section.slug && p.isPinned)
+    || publishedPosts.find(p => p.section === section.slug);
+
   return (
     <div
-      className="mega-menu-panel animate-slide-down"
+      className="fixed left-0 right-0 top-[56px] bg-card border-b border-border shadow-xl z-50 animate-slide-down"
       onMouseEnter={() => {}}
       onMouseLeave={onClose}
     >
@@ -31,6 +37,13 @@ export function MegaMenu({ section, onClose }: MegaMenuProps) {
                 </li>
               ))}
             </ul>
+            <Link
+              to={`/${section.slug}`}
+              className="inline-block mt-3 text-xs font-semibold text-alert hover:underline"
+              onClick={onClose}
+            >
+              View all →
+            </Link>
           </div>
 
           {/* Column B: Tools */}
@@ -41,7 +54,7 @@ export function MegaMenu({ section, onClose }: MegaMenuProps) {
                 {section.tools.map((tool) => (
                   <li key={tool.slug}>
                     <Link
-                      to={`/tools/${tool.slug}`}
+                      to={`/${section.slug}`}
                       className="text-sm font-medium text-foreground hover:text-alert transition-colors"
                       onClick={onClose}
                     >
@@ -59,10 +72,21 @@ export function MegaMenu({ section, onClose }: MegaMenuProps) {
           <div>
             <h3 className="section-label text-muted-foreground mb-3">Featured</h3>
             <div className="bg-muted rounded p-4">
-              <p className="text-xs text-muted-foreground mb-1">PINNED</p>
-              <p className="text-sm font-semibold leading-snug">
-                Latest updates and essential reading in {section.title}
-              </p>
+              {pinnedPost ? (
+                <>
+                  <p className="text-xs text-muted-foreground mb-1 uppercase font-bold">Pinned</p>
+                  <Link
+                    to={`/${pinnedPost.section}/${pinnedPost.category}/${pinnedPost.id}`}
+                    className="text-sm font-semibold leading-snug hover:text-alert transition-colors"
+                    onClick={onClose}
+                  >
+                    {pinnedPost.title}
+                  </Link>
+                  <p className="text-xs text-muted-foreground mt-1">{pinnedPost.author}</p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">No featured content yet.</p>
+              )}
               <Link
                 to={`/${section.slug}`}
                 className="inline-block mt-2 text-xs font-semibold text-alert hover:underline"

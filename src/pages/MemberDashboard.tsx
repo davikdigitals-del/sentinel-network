@@ -1,6 +1,7 @@
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { mockPosts, natoCountries, navSections } from "@/data/mockData";
+import { useData } from "@/contexts/DataContext";
+import { natoCountries, navSections } from "@/data/mockData";
 import { PostCard } from "@/components/PostCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,16 +11,17 @@ import { User, Globe, BookOpen, Bell, Search, FileText, Shield, LogOut } from "l
 import { useState } from "react";
 
 export default function MemberDashboard() {
-  const { user, logout, notifications } = useAuth();
+  const { user, logout, notifications, markAllNotificationsRead } = useAuth();
+  const { publishedPosts } = useData();
   const [search, setSearch] = useState("");
 
   if (!user) return <Navigate to="/login" replace />;
 
   const userCountry = natoCountries.find(c => c.code === user.country);
   const isNato = !!userCountry;
-  
+
   // Filter posts: show country-specific NATO posts only for NATO members
-  const countryPosts = mockPosts.filter(p => {
+  const countryPosts = publishedPosts.filter(p => {
     if (p.category === "nato-updates") return isNato;
     return true;
   });
@@ -41,7 +43,11 @@ export default function MemberDashboard() {
           <div>
             <h1 className="font-display font-bold text-2xl">Welcome, {user.name}</h1>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              {userCountry && <span>{userCountry.flag} {userCountry.name}</span>}
+              {userCountry && (
+                <Link to={`/countries`} className="hover:text-alert transition-colors">
+                  {userCountry.flag} {userCountry.name}
+                </Link>
+              )}
               <Badge variant="secondary" className="text-xs">{user.role}</Badge>
             </div>
           </div>
@@ -61,13 +67,11 @@ export default function MemberDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
         {/* Main */}
         <div className="space-y-6">
-          {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Search all posts..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
           </div>
 
-          {/* Quick stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
               { icon: FileText, label: "Available Posts", value: countryPosts.length },
@@ -87,7 +91,18 @@ export default function MemberDashboard() {
             ))}
           </div>
 
-          {/* Posts */}
+          {/* Country-specific posts for NATO members */}
+          {isNato && (
+            <div>
+              <h2 className="font-display font-bold text-xl mb-4">Posts for {userCountry?.name} {userCountry?.flag}</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {publishedPosts.filter(p => p.category === "nato-updates" || p.tags.some(t => t.toLowerCase() === userCountry?.name.toLowerCase())).slice(0, 4).map(post => (
+                  <PostCard key={post.id} post={post} />
+                ))}
+              </div>
+            </div>
+          )}
+
           <div>
             <h2 className="font-display font-bold text-xl mb-4">Latest Posts</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -103,10 +118,16 @@ export default function MemberDashboard() {
 
         {/* Sidebar */}
         <aside className="space-y-6">
-          {/* Notifications */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2"><Bell className="w-4 h-4" /> Notifications</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2"><Bell className="w-4 h-4" /> Notifications</CardTitle>
+                {recentNotifications.length > 0 && (
+                  <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={markAllNotificationsRead}>
+                    Mark all read
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
               {recentNotifications.length === 0 && <p className="text-sm text-muted-foreground">All caught up!</p>}
@@ -119,7 +140,6 @@ export default function MemberDashboard() {
             </CardContent>
           </Card>
 
-          {/* Browse sections */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">Browse Sections</CardTitle>
