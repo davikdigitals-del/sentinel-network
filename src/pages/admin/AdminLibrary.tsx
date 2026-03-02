@@ -16,7 +16,7 @@ const coverColors = ["bg-primary", "bg-info", "bg-alert", "bg-success", "bg-warn
 const emptyItem: Omit<LibraryItem, "id"> = { title: "", author: "", category: "", pages: 0, format: "PDF", description: "", fileUrl: "", coverColor: "bg-primary" };
 
 export default function AdminLibrary() {
-  const { libraryItems, setLibraryItems } = useData();
+  const { libraryItems, createLibraryItem, updateLibraryItem, deleteLibraryItem } = useData();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<LibraryItem | null>(null);
   const [form, setForm] = useState(emptyItem);
@@ -27,16 +27,16 @@ export default function AdminLibrary() {
   const openCreate = () => { setEditing(null); setForm(emptyItem); setDialogOpen(true); };
   const openEdit = (item: LibraryItem) => { setEditing(item); setForm(item); setDialogOpen(true); };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (editing) {
-      setLibraryItems(prev => prev.map(i => i.id === editing.id ? { ...form, id: editing.id } : i));
+      await updateLibraryItem(editing.id, form);
     } else {
-      setLibraryItems(prev => [{ ...form, id: Date.now().toString() }, ...prev]);
+      await createLibraryItem(form);
     }
     setDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => setLibraryItems(prev => prev.filter(i => i.id !== id));
+  const handleDelete = (id: string) => deleteLibraryItem(id);
 
   return (
     <div className="space-y-6">

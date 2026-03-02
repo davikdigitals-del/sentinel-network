@@ -9,10 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useData } from "@/contexts/DataContext";
 
 export default function AdminBanner() {
-  const { banner, setBanner } = useData();
+  const { banner, updateBanner } = useData();
   const [saved, setSaved] = useState(false);
+  const [localBanner, setLocalBanner] = useState(banner);
 
-  const handleSave = () => { setSaved(true); setTimeout(() => setSaved(false), 2000); };
+  const handleSave = async () => {
+    await updateBanner(localBanner);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
 
   return (
     <div className="space-y-6">
@@ -26,14 +31,14 @@ export default function AdminBanner() {
       <Card>
         <CardHeader><CardTitle className="text-base flex items-center gap-2"><Eye className="w-4 h-4" /> Live Preview</CardTitle></CardHeader>
         <CardContent>
-          {banner.enabled ? (
+          {localBanner.enabled ? (
             <div className="bg-alert text-alert-foreground rounded-sm overflow-hidden">
               <div className="flex items-center h-8 gap-3 px-4">
                 <div className="flex items-center gap-1.5 shrink-0">
                   <AlertTriangle className="w-3.5 h-3.5" />
                   <span className="text-xs font-bold uppercase tracking-wide">Breaking</span>
                 </div>
-                <span className="text-xs font-medium whitespace-nowrap overflow-hidden">{banner.text || "No text set"}</span>
+                <span className="text-xs font-medium whitespace-nowrap overflow-hidden">{localBanner.text || "No text set"}</span>
               </div>
             </div>
           ) : (
@@ -45,16 +50,16 @@ export default function AdminBanner() {
       <Card>
         <CardContent className="p-6 space-y-4">
           <div className="flex items-center gap-3">
-            <Switch checked={banner.enabled} onCheckedChange={v => setBanner(prev => ({ ...prev, enabled: v }))} />
+            <Switch checked={localBanner.enabled} onCheckedChange={v => setLocalBanner(prev => ({ ...prev, enabled: v }))} />
             <Label>Enable banner</Label>
           </div>
           <div>
             <Label>Banner Text</Label>
-            <Input value={banner.text} onChange={e => setBanner(prev => ({ ...prev, text: e.target.value }))} placeholder="Breaking news text..." className="mt-1" />
+            <Input value={localBanner.text} onChange={e => setLocalBanner(prev => ({ ...prev, text: e.target.value }))} placeholder="Breaking news text..." className="mt-1" />
           </div>
           <div>
             <Label>Priority Level</Label>
-            <Select value={banner.priority} onValueChange={v => setBanner(prev => ({ ...prev, priority: v as any }))}>
+            <Select value={localBanner.priority} onValueChange={v => setLocalBanner(prev => ({ ...prev, priority: v as any }))}>
               <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="high">🔴 High — Breaking</SelectItem>

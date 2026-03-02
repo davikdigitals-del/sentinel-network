@@ -18,7 +18,7 @@ const priorityConfig = {
 type AlertPriority = "high" | "medium" | "low";
 
 export default function AdminAlerts() {
-  const { alerts, setAlerts } = useData();
+  const { alerts, createAlert, updateAlert, deleteAlert } = useData();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [text, setText] = useState("");
@@ -27,16 +27,16 @@ export default function AdminAlerts() {
   const openCreate = () => { setEditingId(null); setText(""); setPriority("medium"); setDialogOpen(true); };
   const openEdit = (alert: typeof alerts[0]) => { setEditingId(alert.id); setText(alert.text); setPriority(alert.priority); setDialogOpen(true); };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (editingId) {
-      setAlerts(prev => prev.map(a => a.id === editingId ? { ...a, text, priority } : a));
+      await updateAlert(editingId, { text, priority });
     } else {
-      setAlerts(prev => [{ id: Date.now().toString(), text, priority, timestamp: new Date().toISOString() }, ...prev]);
+      await createAlert({ text, priority });
     }
     setDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => setAlerts(prev => prev.filter(a => a.id !== id));
+  const handleDelete = (id: string) => deleteAlert(id);
 
   return (
     <div className="space-y-6">

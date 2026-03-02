@@ -20,7 +20,7 @@ const emptyPost: Omit<AdminPost, "id"> = {
 };
 
 export default function AdminPosts() {
-  const { posts, setPosts } = useData();
+  const { posts, createPost, updatePost, deletePost } = useData();
   const [search, setSearch] = useState("");
   const [filterSection, setFilterSection] = useState("all");
   const [filterStatus, setFilterStatus] = useState<"all" | PostStatus>("all");
@@ -38,20 +38,22 @@ export default function AdminPosts() {
   const openCreate = () => { setEditingPost(null); setForm(emptyPost); setDialogOpen(true); };
   const openEdit = (post: AdminPost) => { setEditingPost(post); setForm({ ...post }); setDialogOpen(true); };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (editingPost) {
-      setPosts(prev => prev.map(p => p.id === editingPost.id ? { ...form, id: editingPost.id } as AdminPost : p));
+      await updatePost(editingPost.id, form);
     } else {
-      setPosts(prev => [{ ...form, id: Date.now().toString(), publishedAt: new Date().toISOString() } as AdminPost, ...prev]);
+      await createPost(form);
     }
     setDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => setPosts(prev => prev.filter(p => p.id !== id));
-  const togglePin = (id: string) => setPosts(prev => prev.map(p => p.id === id ? { ...p, isPinned: !p.isPinned } : p));
+  const handleDelete = (id: string) => deletePost(id);
+  const togglePin = (id: string) => {
+    const post = posts.find(p => p.id === id);
+    if (post) updatePost(id, { isPinned: !post.isPinned });
+  };
 
   const sectionCategories = navSections.find(s => s.slug === form.section)?.categories || [];
-  const allCategories = navSections.flatMap(s => s.categories.map(c => ({ ...c, section: s.title, sectionSlug: s.slug })));
 
   return (
     <div className="space-y-6">

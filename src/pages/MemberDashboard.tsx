@@ -11,16 +11,16 @@ import { User, Globe, BookOpen, Bell, Search, FileText, Shield, LogOut } from "l
 import { useState } from "react";
 
 export default function MemberDashboard() {
-  const { user, logout, notifications, markAllNotificationsRead } = useAuth();
+  const { user, logout, notifications, markAllNotificationsRead, loading } = useAuth();
   const { publishedPosts } = useData();
   const [search, setSearch] = useState("");
 
+  if (loading) return <div className="container py-16 text-center"><p className="text-muted-foreground">Loading...</p></div>;
   if (!user) return <Navigate to="/login" replace />;
 
   const userCountry = natoCountries.find(c => c.code === user.country);
   const isNato = !!userCountry;
 
-  // Filter posts: show country-specific NATO posts only for NATO members
   const countryPosts = publishedPosts.filter(p => {
     if (p.category === "nato-updates") return isNato;
     return true;
@@ -34,7 +34,6 @@ export default function MemberDashboard() {
 
   return (
     <div className="container py-8">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center">
@@ -44,7 +43,7 @@ export default function MemberDashboard() {
             <h1 className="font-display font-bold text-2xl">Welcome, {user.name}</h1>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               {userCountry && (
-                <Link to={`/countries`} className="hover:text-alert transition-colors">
+                <Link to="/countries" className="hover:text-alert transition-colors">
                   {userCountry.flag} {userCountry.name}
                 </Link>
               )}
@@ -65,7 +64,6 @@ export default function MemberDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
-        {/* Main */}
         <div className="space-y-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -91,7 +89,6 @@ export default function MemberDashboard() {
             ))}
           </div>
 
-          {/* Country-specific posts for NATO members */}
           {isNato && (
             <div>
               <h2 className="font-display font-bold text-xl mb-4">Posts for {userCountry?.name} {userCountry?.flag}</h2>
@@ -116,7 +113,6 @@ export default function MemberDashboard() {
           </div>
         </div>
 
-        {/* Sidebar */}
         <aside className="space-y-6">
           <Card>
             <CardHeader className="pb-2">
