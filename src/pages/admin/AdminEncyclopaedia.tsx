@@ -11,7 +11,7 @@ import { useData, type EncEntry } from "@/contexts/DataContext";
 const emptyEntry: Omit<EncEntry, "id"> = { title: "", letter: "", content: "" };
 
 export default function AdminEncyclopaedia() {
-  const { encEntries, setEncEntries } = useData();
+  const { encEntries, createEncEntry, updateEncEntry, deleteEncEntry } = useData();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<EncEntry | null>(null);
   const [form, setForm] = useState(emptyEntry);
@@ -23,17 +23,17 @@ export default function AdminEncyclopaedia() {
   const openCreate = () => { setEditing(null); setForm(emptyEntry); setDialogOpen(true); };
   const openEdit = (entry: EncEntry) => { setEditing(entry); setForm(entry); setDialogOpen(true); };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const letter = form.title.charAt(0).toUpperCase();
     if (editing) {
-      setEncEntries(prev => prev.map(e => e.id === editing.id ? { ...form, id: editing.id, letter } : e));
+      await updateEncEntry(editing.id, { ...form, letter });
     } else {
-      setEncEntries(prev => [{ ...form, id: Date.now().toString(), letter }, ...prev]);
+      await createEncEntry({ ...form, letter });
     }
     setDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => setEncEntries(prev => prev.filter(e => e.id !== id));
+  const handleDelete = (id: string) => deleteEncEntry(id);
 
   return (
     <div className="space-y-6">

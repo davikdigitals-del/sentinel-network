@@ -21,7 +21,7 @@ export default function SignInPage() {
     const ok = await login(email, password);
     setLoading(false);
     if (ok) navigate("/dashboard");
-    else setError("Invalid credentials. Please try again.");
+    else setError("Invalid credentials. Please check your email and password.");
   };
 
   return (
@@ -43,7 +43,7 @@ export default function SignInPage() {
             </div>
             <div>
               <Label>Password</Label>
-              <Input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" minLength={4} />
+              <Input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" minLength={6} />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Signing in..." : "Sign In"}

@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useData, type MediaItem } from "@/contexts/DataContext";
 
 export default function AdminPodcastVideos() {
-  const { mediaItems, setMediaItems } = useData();
+  const { mediaItems, createMediaItem, updateMediaItem, deleteMediaItem } = useData();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<MediaItem | null>(null);
   const [search, setSearch] = useState("");
@@ -29,18 +29,23 @@ export default function AdminPodcastVideos() {
 
   const openEdit = (item: MediaItem) => { setEditing(item); setForm({ ...item }); setDialogOpen(true); };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (editing) {
-      setMediaItems(prev => prev.map(i => i.id === editing.id ? { ...editing, ...form } as MediaItem : i));
+      await updateMediaItem(editing.id, form);
     } else {
-      setMediaItems(prev => [{
-        ...form, id: Date.now().toString(), views: 0, publishedAt: new Date().toISOString().split("T")[0],
-      } as MediaItem, ...prev]);
+      await createMediaItem({
+        title: form.title || "", description: form.description || "",
+        type: (form.type as "video" | "podcast") || "video",
+        duration: form.duration || "", views: 0,
+        publishedAt: new Date().toISOString().split("T")[0],
+        author: form.author || "", tags: form.tags || [],
+        url: form.url || "",
+      });
     }
     setDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => setMediaItems(prev => prev.filter(i => i.id !== id));
+  const handleDelete = (id: string) => deleteMediaItem(id);
 
   return (
     <div className="space-y-6">
@@ -97,7 +102,7 @@ export default function AdminPodcastVideos() {
               <div><Label>Duration</Label><Input value={form.duration || ""} onChange={e => setForm({ ...form, duration: e.target.value })} placeholder="24:15" /></div>
             </div>
             <div><Label>Author</Label><Input value={form.author || ""} onChange={e => setForm({ ...form, author: e.target.value })} /></div>
-            <div><Label>Media URL (video/podcast/external link)</Label><Input value={form.url || ""} onChange={e => setForm({ ...form, url: e.target.value })} placeholder="https://youtube.com/... or upload URL" /></div>
+            <div><Label>Media URL</Label><Input value={form.url || ""} onChange={e => setForm({ ...form, url: e.target.value })} placeholder="https://youtube.com/..." /></div>
             <div><Label>Tags (comma-separated)</Label><Input value={form.tags?.join(", ") || ""} onChange={e => setForm({ ...form, tags: e.target.value.split(",").map(t => t.trim()).filter(Boolean) })} /></div>
           </div>
           <DialogFooter>
