@@ -30,8 +30,8 @@ interface AuthContextType {
   signup: (data: { email: string; password: string; name: string; country: string }) => Promise<boolean>;
   logout: () => void;
   notifications: AppNotification[];
-  markNotificationRead: (id: string) => void;
-  markAllNotificationsRead: () => void;
+  markNotificationRead: (id: string) => Promise<void>;
+  markAllNotificationsRead: () => Promise<void>;
   unreadCount: number;
 }
 
@@ -42,21 +42,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
-  const buildUser = async (supaUser: SupabaseUser): Promise<User | null> => {
-    // Fetch profile
+  const ensureUserBootstrap = async (
+    supaUser: SupabaseUser,
+    overrides?: { name?: string; country?: string }
+  ) => {
+    const displayName = overrides?.name || supaUser.user_metadata?.name || supaUser.email?.split("@")[0] || "Member";
+    const country = overrides?.country || supaUser.user_metadata?.country || "GB";
+
+    await supabase.from("profiles").upsert(
+      {
+        user_id: supaUser.id,
+        email: supaUser.email || "",
+        name: displayName,
+        country,
+      },
+      { onConflict: "user_id" }
+    );
+
+    await supabase.from("user_roles").upsert(
+      {
+        user_id: supaUser.id,
+        role: "member",
+      } as any,
+      { onConflict: "user_id,role" }
+    );
+  };
+
+  const buildUser = async (supaUser: SupabaseUser): Promise<User> => {
+    await ensureUserBootstrap(supaUser).catch(() => undefined);
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("*")
       .eq("user_id", supaUser.id)
       .maybeSingle();
 
-    // Fetch roles
     const { data: roles } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", supaUser.id);
 
-    const isAdmin = roles?.some(r => r.role === "admin") || false;
+    const isAdmin = roles?.some((r) => r.role === "admin") || false;
 
     return {
       id: supaUser.id,
@@ -75,63 +101,97 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select("*")
       .or(`user_id.eq.${userId},user_id.is.null`)
       .order("timestamp", { ascending: false })
-      .limit(20);
+      .limit(100);
 
-    if (data) {
-      setNotifications(data.map(n => ({
+    if (!data) {
+      setNotifications([]);
+      return;
+    }
+
+    setNotifications(
+      data.map((n) => ({
         id: n.id,
         title: n.title,
         message: n.message,
         timestamp: n.timestamp,
         read: n.read || false,
         type: (n.type as "post" | "alert" | "system") || "system",
-      })));
-    }
+      }))
+    );
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        const u = await buildUser(session.user);
-        setUser(u);
-        fetchNotifications(session.user.id);
-      } else {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!session?.user) {
         setUser(null);
         setNotifications([]);
+        setLoading(false);
+        return;
       }
+
+      const built = await buildUser(session.user);
+      setUser(built);
+      await fetchNotifications(session.user.id);
       setLoading(false);
     });
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        const u = await buildUser(session.user);
-        setUser(u);
-        fetchNotifications(session.user.id);
+      if (!session?.user) {
+        setLoading(false);
+        return;
       }
+
+      const built = await buildUser(session.user);
+      setUser(built);
+      await fetchNotifications(session.user.id);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => authListener.subscription.unsubscribe();
   }, []);
 
-  // Realtime notifications
   useEffect(() => {
     if (!user) return;
+
     const channel = supabase
-      .channel("notifications")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications" }, (payload) => {
-        const n = payload.new as any;
-        if (n.user_id === user.id || n.user_id === null) {
-          setNotifications(prev => [{
-            id: n.id, title: n.title, message: n.message,
-            timestamp: n.timestamp, read: n.read || false,
-            type: n.type || "system",
-          }, ...prev]);
+      .channel("notifications-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, (payload) => {
+        const event = payload.eventType;
+        const row = (event === "DELETE" ? payload.old : payload.new) as any;
+        if (!row) return;
+
+        const isRelevant = row.user_id === null || row.user_id === user.id;
+        if (!isRelevant) return;
+
+        if (event === "DELETE") {
+          setNotifications((prev) => prev.filter((n) => n.id !== row.id));
+          return;
         }
+
+        const normalized: AppNotification = {
+          id: row.id,
+          title: row.title,
+          message: row.message,
+          timestamp: row.timestamp,
+          read: row.read || false,
+          type: (row.type as "post" | "alert" | "system") || "system",
+        };
+
+        setNotifications((prev) => {
+          const existingIndex = prev.findIndex((n) => n.id === normalized.id);
+          if (existingIndex === -1) return [normalized, ...prev];
+
+          const next = [...prev];
+          next[existingIndex] = normalized;
+          return next;
+        });
       })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [user?.id]);
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -141,21 +201,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const adminLogin = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error || !data.user) return false;
-    // Check admin role
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.user.id);
-    const isAdmin = roles?.some(r => r.role === "admin") || false;
+
+    const hasAdminRole = async () => {
+      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
+      return roles?.some((r) => r.role === "admin") || false;
+    };
+
+    let isAdmin = await hasAdminRole();
+
+    if (!isAdmin) {
+      await supabase.rpc("assign_admin_role");
+      isAdmin = await hasAdminRole();
+    }
+
     if (!isAdmin) {
       await supabase.auth.signOut();
       return false;
     }
+
     return true;
   };
 
   const signup = async (data: { email: string; password: string; name: string; country: string }) => {
-    const { error } = await supabase.auth.signUp({
+    const { data: signupData, error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
@@ -163,18 +231,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         emailRedirectTo: window.location.origin,
       },
     });
+
     if (error) return false;
-    // Update profile country after signup
-    // The trigger creates the profile, we just need to update country
-    setTimeout(async () => {
-      const { data: session } = await supabase.auth.getSession();
-      if (session.session?.user) {
-        await supabase
-          .from("profiles")
-          .update({ country: data.country, name: data.name })
-          .eq("user_id", session.session.user.id);
-      }
-    }, 1000);
+
+    if (signupData.user) {
+      await ensureUserBootstrap(signupData.user, { name: data.name, country: data.country }).catch(() => undefined);
+    }
+
     return true;
   };
 
@@ -185,22 +248,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const markNotificationRead = async (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
     await supabase.from("notifications").update({ read: true }).eq("id", id);
   };
 
   const markAllNotificationsRead = async () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    if (user) {
-      await supabase.from("notifications").update({ read: true }).or(`user_id.eq.${user.id},user_id.is.null`);
-    }
+    if (!user) return;
+
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+
+    await supabase
+      .from("notifications")
+      .update({ read: true })
+      .or(`user_id.eq.${user.id},user_id.is.null`)
+      .eq("read", false);
   };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.read).length;
   const isAdmin = user?.role === "admin";
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, loading, login, adminLogin, signup, logout, notifications, markNotificationRead, markAllNotificationsRead, unreadCount }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAdmin,
+        loading,
+        login,
+        adminLogin,
+        signup,
+        logout,
+        notifications,
+        markNotificationRead,
+        markAllNotificationsRead,
+        unreadCount,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import SectionPage from "./pages/SectionPage";
 import ArticlePage from "./pages/ArticlePage";
 import CountriesPage from "./pages/CountriesPage";
+import NotificationsPage from "./pages/NotificationsPage";
 import NotFound from "./pages/NotFound";
 import PublicLayout from "./pages/PublicLayout";
 import SignInPage from "./pages/SignInPage";
@@ -62,6 +63,7 @@ const App = () => (
                 <Route path="/signup" element={<SignUpPage />} />
                 <Route path="/dashboard" element={<MemberDashboard />} />
                 <Route path="/countries" element={<CountriesPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/library" element={<LibraryPage />} />
                 <Route path="/encyclopaedia" element={<EncyclopaediaPage />} />
                 <Route path="/media" element={<MediaHubPage />} />
