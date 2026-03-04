@@ -84,7 +84,9 @@ export type Database = {
         Row: {
           author: string | null
           category: string | null
+          country_codes: string[]
           cover_color: string | null
+          cover_image_url: string
           description: string | null
           file_url: string | null
           format: string | null
@@ -95,7 +97,9 @@ export type Database = {
         Insert: {
           author?: string | null
           category?: string | null
+          country_codes?: string[]
           cover_color?: string | null
+          cover_image_url?: string
           description?: string | null
           file_url?: string | null
           format?: string | null
@@ -106,7 +110,9 @@ export type Database = {
         Update: {
           author?: string | null
           category?: string | null
+          country_codes?: string[]
           cover_color?: string | null
+          cover_image_url?: string
           description?: string | null
           file_url?: string | null
           format?: string | null
@@ -119,6 +125,7 @@ export type Database = {
       media_items: {
         Row: {
           author: string | null
+          country_codes: string[]
           description: string | null
           duration: string | null
           id: string
@@ -132,6 +139,7 @@ export type Database = {
         }
         Insert: {
           author?: string | null
+          country_codes?: string[]
           description?: string | null
           duration?: string | null
           id?: string
@@ -145,6 +153,7 @@ export type Database = {
         }
         Update: {
           author?: string | null
+          country_codes?: string[]
           description?: string | null
           duration?: string | null
           id?: string
@@ -193,6 +202,7 @@ export type Database = {
           author: string
           body: string | null
           category: string
+          country_codes: string[]
           created_by: string | null
           id: string
           image: string | null
@@ -211,6 +221,7 @@ export type Database = {
           author?: string
           body?: string | null
           category: string
+          country_codes?: string[]
           created_by?: string | null
           id?: string
           image?: string | null
@@ -229,6 +240,7 @@ export type Database = {
           author?: string
           body?: string | null
           category?: string
+          country_codes?: string[]
           created_by?: string | null
           id?: string
           image?: string | null
@@ -301,6 +313,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_admin_role: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

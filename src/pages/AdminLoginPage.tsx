@@ -32,7 +32,7 @@ export default function AdminLoginPage() {
     const ok = await adminLogin(email, password);
     setLoading(false);
     if (ok) navigate("/admin");
-    else setError("Invalid admin credentials or you don't have admin access. Create an admin account first.");
+    else setError("Invalid admin credentials or no admin role on this account.");
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -40,32 +40,27 @@ export default function AdminLoginPage() {
     setRegError("");
     if (regPassword.length < 6) { setRegError("Password must be at least 6 characters."); return; }
     setRegLoading(true);
-    
-    // Sign up the user
-    const { data, error } = await supabase.auth.signUp({
+
+    const { error } = await supabase.auth.signUp({
       email: regEmail,
       password: regPassword,
-      options: { data: { name: regName } },
+      options: {
+        data: { name: regName },
+        emailRedirectTo: window.location.origin,
+      },
     });
-    
+
     if (error) {
       setRegError(error.message);
       setRegLoading(false);
       return;
     }
-    
-    if (data.user) {
-      // Add admin role
-      await supabase.from("user_roles").insert({ user_id: data.user.id, role: "admin" as any });
-      // Update profile name
-      await supabase.from("profiles").update({ name: regName }).eq("user_id", data.user.id);
-      
-      setRegLoading(false);
-      navigate("/admin");
-    } else {
-      setRegError("Registration failed. Please try again.");
-      setRegLoading(false);
-    }
+
+    setRegLoading(false);
+    setTab("login");
+    setEmail(regEmail);
+    setPassword(regPassword);
+    setRegError("Account created. Sign in now — first admin login is auto-bootstrapped if no admin exists.");
   };
 
   return (
@@ -79,7 +74,7 @@ export default function AdminLoginPage() {
           <p className="text-sm text-muted-foreground mt-1">Preparedness Hub Administration</p>
         </CardHeader>
         <CardContent>
-          <Tabs value={tab} onValueChange={v => setTab(v as any)}>
+          <Tabs value={tab} onValueChange={(v) => setTab(v as "login" | "register")}>
             <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="register">Create Account</TabsTrigger>
@@ -88,20 +83,18 @@ export default function AdminLoginPage() {
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
                 {error && <p className="text-sm text-destructive bg-destructive/10 p-2 rounded">{error}</p>}
-                <div><Label>Admin Email</Label><Input type="email" value={email} onChange={e => setEmail(e.target.value)} required /></div>
-                <div><Label>Password</Label><Input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} /></div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Authenticating..." : "Login to Admin"}
-                </Button>
+                <div><Label>Admin Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
+                <div><Label>Password</Label><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} /></div>
+                <Button type="submit" className="w-full" disabled={loading}>{loading ? "Authenticating..." : "Login to Admin"}</Button>
               </form>
             </TabsContent>
 
             <TabsContent value="register">
               <form onSubmit={handleRegister} className="space-y-4">
                 {regError && <p className="text-sm text-destructive bg-destructive/10 p-2 rounded">{regError}</p>}
-                <div><Label>Full Name</Label><Input value={regName} onChange={e => setRegName(e.target.value)} required /></div>
-                <div><Label>Admin Email</Label><Input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)} required /></div>
-                <div><Label>Password</Label><Input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)} required minLength={6} /></div>
+                <div><Label>Full Name</Label><Input value={regName} onChange={(e) => setRegName(e.target.value)} required /></div>
+                <div><Label>Admin Email</Label><Input type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} required /></div>
+                <div><Label>Password</Label><Input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} required minLength={6} /></div>
                 <Button type="submit" className="w-full" disabled={regLoading}>
                   <UserPlus className="w-4 h-4 mr-1" />
                   {regLoading ? "Creating..." : "Create Admin Account"}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Bell, Check, CheckCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatTimeAgo } from "@/data/mockData";
@@ -11,7 +12,7 @@ export function NotificationDropdown() {
   return (
     <div className="relative">
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => setOpen((prev) => !prev)}
         className="p-2 hover:bg-primary/20 rounded transition-colors relative"
         aria-label="Notifications"
       >
@@ -25,35 +26,27 @@ export function NotificationDropdown() {
 
       {open && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <button className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-label="Close notifications" />
           <div className="absolute right-0 top-full mt-2 w-80 bg-card border border-border rounded-sm shadow-xl z-50 animate-slide-down">
             <div className="flex items-center justify-between p-3 border-b border-border">
               <h3 className="font-display font-bold text-sm text-foreground">Notifications</h3>
-              <div className="flex items-center gap-2">
-                {unreadCount > 0 && (
-                  <>
-                    <span className="text-xs text-alert font-semibold">{unreadCount} new</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 text-xs px-2"
-                      onClick={() => markAllNotificationsRead()}
-                    >
-                      <CheckCheck className="w-3 h-3 mr-1" /> Mark all read
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-            <div className="max-h-80 overflow-y-auto divide-y divide-border">
-              {notifications.length === 0 && (
-                <p className="p-4 text-sm text-muted-foreground text-center">No notifications</p>
+              {notifications.length > 0 && (
+                <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={() => markAllNotificationsRead()}>
+                  <CheckCheck className="w-3 h-3 mr-1" /> Mark all
+                </Button>
               )}
-              {notifications.map(n => (
-                <div
+            </div>
+
+            <div className="max-h-80 overflow-y-auto divide-y divide-border">
+              {notifications.length === 0 && <p className="p-4 text-sm text-muted-foreground text-center">No notifications</p>}
+              {notifications.slice(0, 8).map((n) => (
+                <button
                   key={n.id}
-                  className={`p-3 hover:bg-muted/50 transition-colors cursor-pointer ${!n.read ? "bg-alert/5" : ""}`}
-                  onClick={() => { markNotificationRead(n.id); }}
+                  className={`w-full text-left p-3 hover:bg-muted/50 transition-colors ${!n.read ? "bg-alert/5" : ""}`}
+                  onClick={() => {
+                    void markNotificationRead(n.id);
+                    setOpen(false);
+                  }}
                 >
                   <div className="flex items-start gap-2">
                     <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${!n.read ? "bg-alert" : "bg-muted"}`} />
@@ -64,8 +57,14 @@ export function NotificationDropdown() {
                     </div>
                     {!n.read && <Check className="w-3 h-3 text-muted-foreground mt-1 shrink-0" />}
                   </div>
-                </div>
+                </button>
               ))}
+            </div>
+
+            <div className="p-2 border-t border-border flex justify-end">
+              <Button asChild variant="ghost" size="sm" className="text-xs" onClick={() => setOpen(false)}>
+                <Link to="/notifications">View all</Link>
+              </Button>
             </div>
           </div>
         </>

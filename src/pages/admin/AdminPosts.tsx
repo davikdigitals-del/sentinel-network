@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Search, Edit2, Trash2, Pin } from "lucide-react";
+import { useRef, useState } from "react";
+import { Plus, Search, Edit2, Trash2, Pin, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,14 +9,25 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { navSections } from "@/data/mockData";
+import { navSections, natoCountries } from "@/data/mockData";
 import { useData, type AdminPost, type PostStatus } from "@/contexts/DataContext";
+import { uploadContentFile } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 
 const emptyPost: Omit<AdminPost, "id"> = {
-  title: "", standfirst: "", section: "", category: "", author: "",
-  publishedAt: new Date().toISOString(), image: "", tags: [], viewCount: 0,
-  readTime: "5 min", status: "draft", body: "",
+  title: "",
+  standfirst: "",
+  section: "",
+  category: "",
+  author: "",
+  publishedAt: new Date().toISOString(),
+  image: "",
+  tags: [],
+  viewCount: 0,
+  readTime: "5 min",
+  status: "draft",
+  body: "",
+  countryCodes: [],
 };
 
 export default function AdminPosts() {
@@ -27,6 +38,8 @@ export default function AdminPosts() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<AdminPost | null>(null);
   const [form, setForm] = useState(emptyPost);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = posts.filter((p) => {
     const matchSearch = p.title.toLowerCase().includes(search.toLowerCase());
@@ -35,8 +48,36 @@ export default function AdminPosts() {
     return matchSearch && matchSection && matchStatus;
   });
 
-  const openCreate = () => { setEditingPost(null); setForm(emptyPost); setDialogOpen(true); };
-  const openEdit = (post: AdminPost) => { setEditingPost(post); setForm({ ...post }); setDialogOpen(true); };
+  const openCreate = () => {
+    setEditingPost(null);
+    setForm(emptyPost);
+    setDialogOpen(true);
+  };
+
+  const openEdit = (post: AdminPost) => {
+    setEditingPost(post);
+    setForm({ ...post, countryCodes: post.countryCodes || [] });
+    setDialogOpen(true);
+  };
+
+  const toggleCountry = (countryCode: string) => {
+    setForm((prev) => ({
+      ...prev,
+      countryCodes: prev.countryCodes.includes(countryCode)
+        ? prev.countryCodes.filter((c) => c !== countryCode)
+        : [...prev.countryCodes, countryCode],
+    }));
+  };
+
+  const uploadImage = async (file: File) => {
+    setUploadingImage(true);
+    try {
+      const { url } = await uploadContentFile(file, "posts");
+      setForm((prev) => ({ ...prev, image: url }));
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const handleSave = async () => {
     if (editingPost) {
@@ -48,34 +89,39 @@ export default function AdminPosts() {
   };
 
   const handleDelete = (id: string) => deletePost(id);
+
   const togglePin = (id: string) => {
-    const post = posts.find(p => p.id === id);
+    const post = posts.find((p) => p.id === id);
     if (post) updatePost(id, { isPinned: !post.isPinned });
   };
 
-  const sectionCategories = navSections.find(s => s.slug === form.section)?.categories || [];
+  const sectionCategories = navSections.find((s) => s.slug === form.section)?.categories || [];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h2 className="font-display text-2xl font-bold text-foreground">Posts</h2>
-        <Button onClick={openCreate}><Plus className="w-4 h-4 mr-1" /> New Post</Button>
+        <Button onClick={openCreate}>
+          <Plus className="w-4 h-4 mr-1" /> New Post
+        </Button>
       </div>
 
       <Card>
         <CardContent className="p-4 flex flex-wrap gap-3">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search posts..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+            <Input placeholder="Search posts..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
           <Select value={filterSection} onValueChange={setFilterSection}>
             <SelectTrigger className="w-[180px]"><SelectValue placeholder="All sections" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All sections</SelectItem>
-              {navSections.map(s => <SelectItem key={s.slug} value={s.slug}>{s.title}</SelectItem>)}
+              {navSections.map((s) => (
+                <SelectItem key={s.slug} value={s.slug}>{s.title}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
-          <Select value={filterStatus} onValueChange={v => setFilterStatus(v as any)}>
+          <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as "all" | PostStatus)}>
             <SelectTrigger className="w-[140px]"><SelectValue placeholder="All status" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All status</SelectItem>
@@ -90,17 +136,20 @@ export default function AdminPosts() {
       <Card>
         <CardContent className="p-0 divide-y divide-border">
           {filtered.length === 0 && <p className="p-8 text-center text-muted-foreground">No posts found.</p>}
-          {filtered.map(post => (
+          {filtered.map((post) => (
             <div key={post.id} className="flex items-start gap-4 p-4 hover:bg-muted/30 transition-colors">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   {post.isPinned && <Pin className="w-3 h-3 text-warning" />}
                   <Badge variant={post.status === "published" ? "default" : "secondary"} className="text-[10px]">{post.status}</Badge>
                   <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{post.section} / {post.category}</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {post.countryCodes?.length ? `${post.countryCodes.length} country target(s)` : "Global"}
+                  </span>
                 </div>
                 <p className="text-sm font-medium text-foreground line-clamp-2">{post.title}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {post.author} · {post.viewCount.toLocaleString()} views · {post.readTime} · {new Date(post.publishedAt).toLocaleDateString()}
+                  {post.author} · {post.viewCount.toLocaleString()} views · {post.readTime}
                 </p>
               </div>
               <div className="flex items-center gap-1 shrink-0">
@@ -116,32 +165,39 @@ export default function AdminPosts() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editingPost ? "Edit Post" : "Create New Post"}</DialogTitle></DialogHeader>
+
           <div className="space-y-4">
-            <div><Label>Title</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Post title" /></div>
-            <div><Label>Standfirst</Label><Textarea value={form.standfirst} onChange={e => setForm({ ...form, standfirst: e.target.value })} placeholder="Brief summary..." rows={2} /></div>
-            <div className="grid grid-cols-2 gap-4">
+            <div><Label>Title</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Post title" /></div>
+            <div><Label>Standfirst</Label><Textarea value={form.standfirst} onChange={(e) => setForm({ ...form, standfirst: e.target.value })} placeholder="Brief summary..." rows={2} /></div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label>Section</Label>
-                <Select value={form.section} onValueChange={v => setForm({ ...form, section: v, category: "" })}>
+                <Select value={form.section} onValueChange={(v) => setForm({ ...form, section: v, category: "" })}>
                   <SelectTrigger><SelectValue placeholder="Select section" /></SelectTrigger>
-                  <SelectContent>{navSections.map(s => <SelectItem key={s.slug} value={s.slug}>{s.title}</SelectItem>)}</SelectContent>
+                  <SelectContent>
+                    {navSections.map((s) => <SelectItem key={s.slug} value={s.slug}>{s.title}</SelectItem>)}
+                  </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label>Category</Label>
-                <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
+                <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
                   <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-                  <SelectContent>{sectionCategories.map(c => <SelectItem key={c.slug} value={c.slug}>{c.title}</SelectItem>)}</SelectContent>
+                  <SelectContent>
+                    {sectionCategories.map((c) => <SelectItem key={c.slug} value={c.slug}>{c.title}</SelectItem>)}
+                  </SelectContent>
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label>Author</Label><Input value={form.author} onChange={e => setForm({ ...form, author: e.target.value })} /></div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div><Label>Author</Label><Input value={form.author} onChange={(e) => setForm({ ...form, author: e.target.value })} /></div>
               <div>
                 <Label>Status</Label>
-                <Select value={form.status} onValueChange={v => setForm({ ...form, status: v as PostStatus })}>
+                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as PostStatus })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="draft">Draft</SelectItem>
@@ -151,17 +207,58 @@ export default function AdminPosts() {
                 </Select>
               </div>
             </div>
-            <div><Label>Body</Label><Textarea value={form.body} onChange={e => setForm({ ...form, body: e.target.value })} placeholder="Full article content..." rows={8} /></div>
-            <div><Label>Tags (comma-separated)</Label><Input value={form.tags.join(", ")} onChange={e => setForm({ ...form, tags: e.target.value.split(",").map(t => t.trim()).filter(Boolean) })} /></div>
-            <div><Label>Hero Image URL</Label><Input value={form.image} onChange={e => setForm({ ...form, image: e.target.value })} placeholder="https://..." /></div>
+
+            <div><Label>Body</Label><Textarea value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} placeholder="Full article content..." rows={8} /></div>
+            <div><Label>Tags (comma-separated)</Label><Input value={form.tags.join(", ")} onChange={(e) => setForm({ ...form, tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) })} /></div>
+
+            <div className="space-y-2">
+              <Label>Hero Image</Label>
+              <div className="flex gap-2">
+                <Input value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://..." />
+                <Button type="button" variant="outline" onClick={() => imageInputRef.current?.click()} disabled={uploadingImage}>
+                  <Upload className="w-4 h-4 mr-1" /> {uploadingImage ? "Uploading..." : "Upload"}
+                </Button>
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void uploadImage(file);
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Target Countries (leave empty for global visibility)</Label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 max-h-44 overflow-y-auto border border-border rounded-md p-3">
+                {natoCountries.map((country) => (
+                  <label key={country.code} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={form.countryCodes.includes(country.code)}
+                      onChange={() => toggleCountry(country.code)}
+                      className="accent-primary"
+                    />
+                    <span>{country.flag} {country.code}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <div className="flex items-center gap-3">
-              <Switch checked={form.isPinned || false} onCheckedChange={v => setForm({ ...form, isPinned: v })} />
+              <Switch checked={form.isPinned || false} onCheckedChange={(v) => setForm({ ...form, isPinned: v })} />
               <Label>Pin as featured</Label>
             </div>
           </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={!form.title || !form.section}>{editingPost ? "Save Changes" : "Create Post"}</Button>
+            <Button onClick={handleSave} disabled={!form.title || !form.section || !form.category}>
+              {editingPost ? "Save Changes" : "Create Post"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
