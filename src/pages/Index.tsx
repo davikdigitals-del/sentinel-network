@@ -29,6 +29,15 @@ const Index = () => {
 
   return (
     <div className="bg-background">
+      {/* ═══ TOP BANNER IMAGE ═══ */}
+      <div className="w-full">
+        <img
+          src="/images/top-banner.png"
+          alt="Preparedness Hub Banner"
+          className="w-full h-auto object-cover"
+        />
+      </div>
+
       {/* ═══ HERO BLOCK ═══ */}
       {featuredPost && (
         <section className="border-b border-border">
