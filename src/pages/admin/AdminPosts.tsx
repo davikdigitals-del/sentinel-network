@@ -90,9 +90,18 @@ export default function AdminPosts() {
 
   const handleDelete = (id: string) => deletePost(id);
 
-  const togglePin = (id: string) => {
+  const togglePin = async (id: string) => {
     const post = posts.find((p) => p.id === id);
-    if (post) updatePost(id, { isPinned: !post.isPinned });
+    if (!post) return;
+    const newPinned = !post.isPinned;
+    if (newPinned) {
+      // Unpin all other posts first so only one featured post at a time
+      const pinned = posts.filter((p) => p.isPinned && p.id !== id);
+      for (const p of pinned) {
+        await updatePost(p.id, { isPinned: false });
+      }
+    }
+    await updatePost(id, { isPinned: newPinned });
   };
 
   const sectionCategories = navSections.find((s) => s.slug === form.section)?.categories || [];

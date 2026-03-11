@@ -31,7 +31,7 @@ const HeroSection = ({ featuredPost, sidebarPosts }: HeroSectionProps) => {
             to={`/${featuredPost.section}/${featuredPost.category}/${featuredPost.id}`}
             className="group block"
           >
-            <div className="aspect-[16/9] bg-muted overflow-hidden">
+            <div className="aspect-[2/1] md:aspect-[5/2] bg-muted overflow-hidden">
               {featuredPost.image && (
                 <img
                   src={featuredPost.image}
