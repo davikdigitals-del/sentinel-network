@@ -32,7 +32,7 @@ const Index = () => {
       {/* ═══ TOP BANNER IMAGE ═══ */}
       <div className="w-full">
         <img
-          src="/images/top-banner.png"
+          src="/images/hero-banner.jpg"
           alt="Preparedness Hub Banner"
           className="w-full h-auto object-cover"
         />
